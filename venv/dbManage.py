@@ -27,14 +27,17 @@ class LoginDatabase:
 
         if member_type_str == "monthly":
             exp_date = str(timedelta(days=30) + join_date)
-        elif member_type_str == "monthly":
+        elif member_type_str == "annual":
             exp_date = str(timedelta(years=1) + join_date)
+        elif member_type_str == "student":
+            exp_date = str(timedelta(days=30) + join_date)
         else:
             exp_punches = 10
 
         member_ID_str = first_name + last_name  # TODO: Add join datetime to member ID pre hash
         member_ID = int(hashlib.sha256(member_ID_str.encode('utf-8')).hexdigest(),
                         16) % 10 ** 16  # Generate a 16 digit ID number :: https://stackoverflow.com/a/42089311
+
 
         # TODO: Check uniqueness of new ID, wait 1 second, update join_date and retry. Repeat until a unique ID is assigned.
 
@@ -90,15 +93,15 @@ class LoginDatabase:
 
             remaining_time="-1"
 
-            if member_type_str == "punchcard" or member_data["expiration_date"] == "-1":
+            if member_type_str == "punchcard":
                 self.membersDB.update(decrement('expiration_punches'), member_query.id == member_id)
-            else:
-                member_expiration_date = datetime.strptime(member_data["expiration_date"], "%Y-%m-%d %H:%M:%S")
-                remaining_time = timedelta(member_expiration_date - logged_time)
+
+            if (member_data["expiration_punches"] < 0):
+                raise RuntimeError("The member has used all of their punches!")
 
             log_entry = {"id": member_id, "name_first": member_data["name_first"], "name_last": member_data["name_last"],
-                         "log_time": str(logged_time), "remaining_punches": member_data["expiration_punches"] - 1,
-                         "remaining_time": remaining_time}
+                         "log_time": str(logged_time), "member_type_str": member_type_str,
+                         "remaining_punches": member_data["expiration_punches"] - 1}
 
             self.logDB.insert(log_entry)
 

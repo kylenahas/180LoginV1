@@ -66,11 +66,9 @@ class Splash(tk.Frame):
         try:
             member_id = int(self.scannerInput.get())
             logged_member = my_db.log_member(member_id)
-            info_str = "Member: " + logged_member["name_first"] + " " + logged_member["name_first"] + " logged in!\n\n"
+            info_str = "Member: " + logged_member["name_first"] + " " + logged_member["name_last"] + " logged in!\n\n"
             if my_db.retrieve_member(member_id)["member_type"] == "punchcard":
                 info_str += "Punches left: " + str(logged_member["remaining_punches"])
-            else:
-                info_str += "Time left: " # TODO: Add time left
             messagebox.showinfo(title="Logging in:", message=info_str)
         except ValueError:
             messagebox.showwarning(title="Problem logging in member!", message="Member not found!")
@@ -128,13 +126,13 @@ class NewMemberWindow:
         if self.validate_entries():
             print("Form ok!")
             try:
-                new_member = my_db.add_member(   first_name=self.entry_data["name_first"].get(),
-                                                 last_name=self.entry_data["name_last"].get(),
+                new_member = my_db.add_member(   first_name=self.entry_data["name_first"].get().capitalize(),
+                                                 last_name=self.entry_data["name_last"].get().capitalize(),
                                                  email=self.entry_data["email"].get(),
                                                  phone=self.entry_data["phone"].get(),
                                                  birthdate=self.entry_data["dob"].get(),
                                                  member_type_str=self.entry_data["member_type"].get())
-                nm_success_str = "Successfully created member: " + new_member["name_first"] + new_member["name_last"]
+                nm_success_str = "Successfully created member: " + new_member["name_first"] + " " + new_member["name_last"]
                 messagebox.showinfo(title="New Member Status", message=nm_success_str)
 
                 barcode = Barcoder()
@@ -174,14 +172,14 @@ class FormHelp:
 
             if field_name == "member_type":
                 form = StringVar()
-                memberOpts = ["Punchcard", "Monthly", "Annual"]
+                memberOpts = ["Punchcard", "Monthly", "Annual", "Student"]
                 for text in memberOpts:
                     Radiobutton(row, text=text, var=form, value=text.lower()).pack(side=LEFT, anchor=NW)
                 form.set("punchcard")
             elif field_name == "dob":
                 # form = DateEntry(row)   # FIXME: Datepicker not working
-                s = ttk.Style(root)
-                s.theme_use('clam')
+                # s = ttk.Style(root)
+                # s.theme_use('clam')
 
                 # form = DateEntry(row, width=12, background='darkblue', foreground='white', borderwidth=2)
                 # form.pack(padx=10, pady=10)
