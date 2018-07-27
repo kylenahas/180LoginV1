@@ -41,10 +41,16 @@ class LoginDatabase:
 
         # TODO: Check uniqueness of new ID, wait 1 second, update join_date and retry. Repeat until a unique ID is assigned.
 
-        entry = {"name_first": first_name, "name_last": last_name, "id": member_ID, "dob": str(birthdate),
-                 "email" : email, "phone": phone,
-                 "join_date": str(join_date), "member_type": member_type_str,
-                 "expiration_date": exp_date, "expiration_punches": exp_punches}
+        entry = {"name_first": first_name,
+                 "name_last": last_name,
+                 "id": member_ID,
+                 "dob": str(birthdate),
+                 "email" : email,
+                 "phone": phone,
+                 "join_date": str(join_date),
+                 "member_type": member_type_str,
+                 "expiration_date": exp_date,
+                 "expiration_punches": exp_punches}
 
         self.membersDB.insert(entry)
 
@@ -59,26 +65,38 @@ class LoginDatabase:
         else:
             raise ValueError("The entered user ID could not be found in the database")
 
-    def update_member(self, first_name, last_name, email, phone, birthdate, member_type_str):
+    def update_member(self, member_id, first_name, last_name, email, phone, birthdate, member_type_str, expiration_punches=-1):
 
         # TODO: Implement update. Currently just adds new member
 
-        join_date = datetime.now()
-        exp_date = timedelta(days=30)
-        exp_date += join_date
+        member_query = Query()
 
-        member_ID_str = first_name + last_name  # TODO: Add join datetime to member ID pre hash
-        member_ID = int(hashlib.sha256(member_ID_str.encode('utf-8')).hexdigest(),
-                        16) % 10 ** 16  # Generate a 16 digit ID number :: https://stackoverflow.com/a/42089311
+        if self.membersDB.contains(member_query.id == member_id):
+            exp_date = "-1"
 
-        entry = {"name_first": first_name, "name_last": last_name, "id": member_ID, "dob": str(birthdate),
-                 "email": email, "phone": phone,
-                 "join_date": str(join_date), "member_type": member_type_str,
-                 "expiration_date": str(exp_date), "expiration_punches": 10}
+            if member_type_str == "monthly":
+                exp_date = str(timedelta(days=30) + datetime.now())
+            elif member_type_str == "annual":
+                exp_date = str(timedelta(years=1) + datetime.now())
+            elif member_type_str == "student":
+                exp_date = str(timedelta(days=30) + datetime.now())
 
-        membersDB.insert(entry)
+            member_data = self.membersDB.get(member_query.id == member_id)
+            member_data["name_first"] = first_name
+            member_data["name_last"] = last_name
+            member_data["dob"] = str(birthdate)
+            member_data["email"] = email
+            member_data["phone"] = phone
+            member_data["member_type"] = member_type_str
+            member_data["expiration_date"] = exp_date
+            member_data["expiration_punches"] = int(expiration_punches)
 
-        return entry
+
+            self.membersDB.update(member_data, member_query.id == member_id)
+            return member_data
+        else:
+            raise ValueError("The entered user ID could not be found in the database")
+
 
     def log_member(self, member_id):
         logged_time = datetime.now()
@@ -94,10 +112,11 @@ class LoginDatabase:
             remaining_time="-1"
 
             if member_type_str == "punchcard":
+                if member_data["expiration_punches"] <= 0:
+                    raise RuntimeError("The member has used all of their punches!")
                 self.membersDB.update(decrement('expiration_punches'), member_query.id == member_id)
 
-            if (member_data["expiration_punches"] < 0):
-                raise RuntimeError("The member has used all of their punches!")
+
 
             log_entry = {"id": member_id, "name_first": member_data["name_first"], "name_last": member_data["name_last"],
                          "log_time": str(logged_time), "member_type_str": member_type_str,
