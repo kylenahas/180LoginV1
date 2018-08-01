@@ -1,10 +1,13 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox, StringVar, ttk
+from tkinter.font import Font
 from tkcalendar import Calendar, DateEntry
 from enum import Enum
 
 import pprint
+import pyperclip
+
 
 from dbManage import *
 from barcodeGen import *
@@ -39,9 +42,11 @@ class Splash(tk.Frame):
 
         tk.Label(text="-or-").pack(pady=(30, 0), side='top', expand=0)
 
-        tk.Button(command=self.add_new_member_pushed, text="Add New Member").pack(side='left', expand=1, padx=15, pady=10)
+        tk.Button(command=self.add_new_member_pushed, text="Add New Member").pack(side='left', expand=1, padx=5, pady=10)
 
-        tk.Button(command=self.update_member_pushed, text="Update Member").pack(side='right', expand=1, padx=15, pady=10)
+        tk.Button(command=self.update_member_pushed, text="Update Member").pack(side='right', expand=1, padx=5, pady=10)
+
+        tk.Button(command=self.lookup_member_pushed, text="Lookup Member").pack(side='bottom', expand=1, padx=5, pady=10)
 
     def clear_window(self):  # https://stackoverflow.com/a/44955479
         list = root.grid_slaves()
@@ -60,12 +65,13 @@ class Splash(tk.Frame):
         splashWindow.master.maxsize(width=width, height=height)
 
     def add_new_member_pushed(self):
-        # NewMemberWindow()
         EditMemberWindow(context=EMWContext.NewMember)
 
     def update_member_pushed(self):
-        # UpdateMemberWindow()
         EditMemberWindow(context=EMWContext.UpdateMember)
+
+    def lookup_member_pushed(self):
+        MemberLookup()
 
 
     def login_member(self, event):
@@ -319,6 +325,147 @@ class FormHelp:
 
             entries[field_name] = form
         return entries
+
+class MemberLookup():
+    def __init__(self, master=None):
+
+        # nmw == New Member Window
+        self.ml_enter = Toplevel()
+        self.populate_searcher()
+        self.center(self.ml_enter)
+
+
+    def populate_searcher(self):
+        row1 = Frame(self.ml_enter)
+        row1.pack(side=TOP, fill=X, padx=20, pady=10)
+        Label(row1, text="Enter Last Name").pack(side=TOP)
+
+        row2 = Frame(self.ml_enter)
+        row2.pack(side=TOP, fill=X, padx=20, pady=10)
+        self.last_name_entry = Entry(row2)
+        self.last_name_entry.pack()
+        self.last_name_entry.focus()
+        self.last_name_entry.bind('<Return>', self.search_for_member)
+
+        row3 = Frame(self.ml_enter)
+        row3.pack(side=TOP, fill=X, padx=20, pady=10)
+        Button(row3, command=self.search_for_member, text="Search for Member").pack()
+
+
+
+    def center(self, root):
+        root.update_idletasks()
+        width = root.winfo_width()
+        height = root.winfo_height()
+        x = (root.winfo_screenwidth() // 2) - (width // 2)
+        y = (root.winfo_screenheight() // 2) - (height // 2)
+        root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    def search_for_member(self, event=None):
+        try:
+            self.search_string = self.last_name_entry.get()
+            self.search_results = my_db.query_member(self.search_string)
+            self.display_search_results(self.search_results)
+            self.ml_enter.destroy()
+        except ValueError:
+            messagebox.showwarning(title="Problem locating member!",
+                                   message="No members with last name \"" + self.last_name_entry.get() + "\" found!")
+            self.ml_enter.focus()
+            self.last_name_entry.focus_force()
+
+    def display_search_results(self, results):
+
+        # Based heavily around: https://pyinmyeye.blogspot.com/2012/07/tkinter-multi-column-list-demo.html
+
+        self.rwin = Toplevel()
+
+        self.rwin.title("Search Results for: " + self.search_string)
+
+        columns = {  "name_first": "First Name",
+                     "name_last": "Last Name",
+                     "id": "Member ID",
+                     "dob": "Date of Birth",
+                     "member_type": "Member Type"}
+
+
+        columnKeys=[]
+        for k in columns.keys():
+            columnKeys.append(k)
+
+        self.tree = ttk.Treeview(self.rwin, columns=columnKeys, show="headings")
+
+        for dbName in columns.keys():
+            # tree.heading(c, text=c.title(),
+            #                   command=lambda c=c: self._column_sort(c, MCListDemo.SortDir))
+            self.tree.column(dbName, width=Font().measure(columns[dbName]) + 2)
+            self.tree.heading(dbName, text=columns[dbName])
+
+
+        for item in results:
+            arr = []
+            for val in columns.keys():
+                arr.append(item[val])
+                iwidth = Font().measure(item[val]) + 10
+                if self.tree.column(val, 'width') < iwidth:
+                    self.tree.column(val, width=iwidth)
+            self.tree.insert('', 'end', values=arr)
+
+
+        ysb = ttk.Scrollbar(self.rwin, orient=VERTICAL, command=self.tree.yview)
+        xsb = ttk.Scrollbar(self.rwin, orient=HORIZONTAL, command=self.tree.xview)
+
+        self.tree['yscroll'] = ysb.set
+        self.tree['xscroll'] = xsb.set
+
+        self.tree.grid(row=0, column=0, sticky=NSEW)
+        ysb.grid(row=0, column=1, sticky=NS)
+        xsb.grid(row=1, column=0, sticky=EW)
+
+        self.rwin.rowconfigure(0, weight=1)
+        self.rwin.columnconfigure(0, weight=1)
+
+        self.buttons = Frame(self.rwin)
+        self.buttons.grid()
+
+        Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1)
+        Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2)
+
+        self.center(self.rwin)
+
+
+    def newBarcode(self):
+        print("New Barcode")
+        cur_item = self.tree.focus()
+
+        try:
+            memberID = self.tree.item(cur_item)["values"][2]
+            print(memberID)
+            barcode = Barcoder()
+
+            barcode.create_barcode(memberID)
+            barcode.open_barcode()
+            self.rwin.destroy()
+        except IndexError:
+            messagebox.showwarning(title="Problem locating member!",
+                                   message="Please select a member from the list first")
+
+
+    def copyMID(self):
+        cur_item = self.tree.focus()
+
+        try:
+            memberID = self.tree.item(cur_item)["values"][2]
+            print("Member ID Copied!")
+            print(memberID)
+            pyperclip.copy(memberID)
+            messagebox.showinfo(title="Copy Success",
+                                message="Member ID copied successfully to clipboard. Paste in a scanner input to use.")
+            self.rwin.destroy()
+        except IndexError:
+            messagebox.showwarning(title="Problem locating member!",
+                                   message="Please select a member from the list first")
+
+
 
 
 
