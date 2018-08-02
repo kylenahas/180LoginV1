@@ -104,8 +104,6 @@ class EditMemberWindow:
             self.emw.title("New Member")
         elif self.context == EMWContext.UpdateMember:
             self.emw.title("Update Member")
-        style = ttk.Style(self.emw)
-        style.theme_use('clam')
 
 
 
@@ -146,6 +144,9 @@ class EditMemberWindow:
                 elif form == "member_type_radios":
                     for radio in self.entry_data[form]:
                         radio.config(state=DISABLED)
+                elif form == "dob_arr":
+                    for spinbox in self.entry_data[form]:
+                        spinbox.config(state=DISABLED)
                 else:
                     self.entry_data[form].config(state=DISABLED)
             self.add_punches_button = Button(self.emw, text="Add 10 Punches", command=self.add_10_punches, state=DISABLED)
@@ -164,6 +165,9 @@ class EditMemberWindow:
                 elif form == "member_type_radios":
                     for radio in self.entry_data[form]:
                         radio.config(state=NORMAL)
+                elif form == "dob_arr":
+                    for spinbox in self.entry_data[form]:
+                        spinbox.config(state=NORMAL)
                 else:
                     self.entry_data[form].config(state=NORMAL)
                     self.entry_data[form].delete(0, END)
@@ -181,6 +185,7 @@ class EditMemberWindow:
 
     def enter_to_db(self):
         fh=FormHelp()
+        self.sync_dob()
         printed_vals = fh.print_values(entries=self.entry_data)
         if self.validate_entries():
             print("Form ok!")
@@ -233,12 +238,31 @@ class EditMemberWindow:
 
         print("10 punches added!")
 
+    def sync_dob(self):
+        year = self.entry_data["dob_arr"][0].get()
+        month = self.entry_data["dob_arr"][1].get()
+        day = self.entry_data["dob_arr"][2].get()
+
+        if int(month) < 10:
+            month = "0" + str(month)
+        if int(day) < 10:
+            day = "0" + str(day)
+
+        dob_str = str(year) + "-" + str(month) + "-" + str(day)
+
+        self.entry_data["dob"].delete(0, END)
+        self.entry_data["dob"].insert(0, dob_str)
+
+        return dob_str
+
 
 
     def validate_entries(self):
         ret = True
         for field_name in self.entry_data.keys():
             if field_name == "member_type_radios":
+                pass
+            elif field_name == "dob_arr":
                 pass
             else:
                 if self.entry_data[field_name].get() == "":
@@ -249,7 +273,7 @@ class EditMemberWindow:
 class FormHelp:
     def print_values(self, entries):
         for field_name in entries.keys():
-            if field_name == "member_type_radios":
+            if field_name == "member_type_radios" or field_name == "dob_arr":
                 pass
             else:
                 print(field_name + ": " + entries[field_name].get())
@@ -281,7 +305,26 @@ class FormHelp:
                 # form.pack(padx=10, pady=10)
                 form = Entry(row)
                 form.insert(0, "yyyy-mm-dd")
-                form.pack(side=LEFT, expand=YES, fill=X)
+                # form.pack(side=LEFT, expand=YES, fill=X)
+
+
+                year = Spinbox(row, width=4, from_=1900, to=2018)
+                month = Spinbox(row, width=2, from_=1, to=12)
+                day = Spinbox(row, width=2, from_=1, to=31)
+
+
+                dob = [year, month, day]
+                entries["dob_arr"] = dob
+
+                Label(row, text="Month:").pack(side=LEFT, fill=X)
+                month.pack(side=LEFT, fill=X)
+                Label(row, text="Day:").pack(side=LEFT, fill=X)
+                day.pack(side=LEFT, fill=X)
+                Label(row, text="Year:").pack(side=LEFT, fill=X)
+                year.pack(side=LEFT, fill=X)
+
+
+
             elif field_name == "expiration_punches":
                 form = Spinbox(row, width=4,  from_=0, to=100)
                 form.pack(side=LEFT, expand=NO)
@@ -293,38 +336,6 @@ class FormHelp:
             entries[field_name] = form
         return entries
 
-
-    def make_filled_forms(root, fields, data):
-        entries = {}
-        for field_name in fields.keys():
-            row = Frame(root)
-            lab = Label(row, width=15, text=fields[field_name])
-            row.pack(side=TOP, fill=X)
-            lab.pack(side=LEFT)
-
-            if field_name == "member_type":
-                form = StringVar()
-                memberOpts = ["Punchcard", "Monthly", "Annual", "Student"]
-                for text in memberOpts:
-                    Radiobutton(row, text=text, var=form, value=text.lower()).pack(side=LEFT, anchor=NW)
-                form.set("punchcard")
-            elif field_name == "dob":
-                # form = DateEntry(row)   # FIXME: Datepicker not working
-                # s = ttk.Style(root)
-                # s.theme_use('clam')
-
-                # form = DateEntry(row, width=12, background='darkblue', foreground='white', borderwidth=2)
-                # form.pack(padx=10, pady=10)
-                form = Entry(row)
-                form.insert(0, "yyyy-mm-dd")
-                form.pack(side=RIGHT, expand=YES, fill=X)
-            else:
-                form = Entry(row)
-                form.pack(side=RIGHT, expand=YES, fill=X)
-
-
-            entries[field_name] = form
-        return entries
 
 class MemberLookup():
     def __init__(self, master=None):
@@ -338,14 +349,14 @@ class MemberLookup():
     def populate_searcher(self):
         row1 = Frame(self.ml_enter)
         row1.pack(side=TOP, fill=X, padx=20, pady=10)
-        Label(row1, text="Enter Last Name").pack(side=TOP)
+        Label(row1, text="Enter First Name").pack(side=TOP)
 
         row2 = Frame(self.ml_enter)
         row2.pack(side=TOP, fill=X, padx=20, pady=10)
-        self.last_name_entry = Entry(row2)
-        self.last_name_entry.pack()
-        self.last_name_entry.focus()
-        self.last_name_entry.bind('<Return>', self.search_for_member)
+        self.first_name_entry = Entry(row2)
+        self.first_name_entry.pack()
+        self.first_name_entry.focus()
+        self.first_name_entry.bind('<Return>', self.search_for_member)
 
         row3 = Frame(self.ml_enter)
         row3.pack(side=TOP, fill=X, padx=20, pady=10)
@@ -363,15 +374,15 @@ class MemberLookup():
 
     def search_for_member(self, event=None):
         try:
-            self.search_string = self.last_name_entry.get()
+            self.search_string = self.first_name_entry.get()
             self.search_results = my_db.query_member(self.search_string)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
         except ValueError:
             messagebox.showwarning(title="Problem locating member!",
-                                   message="No members with last name \"" + self.last_name_entry.get() + "\" found!")
+                                   message="No members with first name \"" + self.first_name_entry.get() + "\" found!")
             self.ml_enter.focus()
-            self.last_name_entry.focus_force()
+            self.first_name_entry.focus_force()
 
     def display_search_results(self, results):
 
@@ -459,7 +470,7 @@ class MemberLookup():
             print(memberID)
             pyperclip.copy(memberID)
             messagebox.showinfo(title="Copy Success",
-                                message="Member ID copied successfully to clipboard. Paste in a scanner input to use.")
+                                message="Member ID copied to clipboard. Paste in a scanner input, then press enter to use.")
             self.rwin.destroy()
         except IndexError:
             messagebox.showwarning(title="Problem locating member!",
