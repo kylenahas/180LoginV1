@@ -125,6 +125,7 @@ class EditMemberWindow:
                                                              "dob": "Date of Birth",
                                                              "member_type": "Member Type"})
             Button(self.emw, text="Add Member", command=self.enter_to_db).pack(side=BOTTOM, pady=10)
+            self.entry_data["name_first"].focus()
         elif self.context == EMWContext.UpdateMember:
             self.entry_data = FormHelp.make_forms(self.emw, {   "id": "Member ID",
                                                                 "name_first": "First Name",
@@ -442,6 +443,7 @@ class MemberLookup():
         Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2)
 
         self.center(self.rwin)
+        self.rwin.focus_force()
 
 
     def newBarcode(self):
