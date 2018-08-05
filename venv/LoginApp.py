@@ -174,6 +174,8 @@ class EditMemberWindow:
                     self.entry_data[form].delete(0, END)
                     self.entry_data[form].insert(0, member_info[form])
 
+            self.sync_dob()
+
             self.add_punches_button.config(state=NORMAL)
 
 
@@ -240,23 +242,36 @@ class EditMemberWindow:
         print("10 punches added!")
 
     def sync_dob(self):
-        year = self.entry_data["dob_arr"][0].get()
-        month = self.entry_data["dob_arr"][1].get()
-        day = self.entry_data["dob_arr"][2].get()
+        if self.entry_data["dob"].get() == "yyyy-mm-dd":
+            year = self.entry_data["dob_arr"][0].get()
+            month = self.entry_data["dob_arr"][1].get()
+            day = self.entry_data["dob_arr"][2].get()
 
-        if int(month) < 10:
-            month = "0" + str(month)
-        if int(day) < 10:
-            day = "0" + str(day)
+            if int(month) < 10:
+                month = "0" + str(month)
+            if int(day) < 10:
+                day = "0" + str(day)
 
-        dob_str = str(year) + "-" + str(month) + "-" + str(day)
+            dob_str = str(year) + "-" + str(month) + "-" + str(day)
 
-        self.entry_data["dob"].delete(0, END)
-        self.entry_data["dob"].insert(0, dob_str)
+            self.entry_data["dob"].delete(0, END)
+            self.entry_data["dob"].insert(0, dob_str)
 
-        return dob_str
+            return dob_str
+        else:
+            dob = self.entry_data["dob"].get().split("-")
 
+            # Year Entry
+            self.entry_data["dob_arr"][0].delete(0, END)
+            self.entry_data["dob_arr"][0].insert(0, dob[0])
 
+            # Month Entry
+            self.entry_data["dob_arr"][1].delete(0, END)
+            self.entry_data["dob_arr"][1].insert(0, dob[1])
+
+            # Day Entry
+            self.entry_data["dob_arr"][2].delete(0, END)
+            self.entry_data["dob_arr"][2].insert(0, dob[2])
 
     def validate_entries(self):
         ret = True
