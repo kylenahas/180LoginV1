@@ -223,8 +223,8 @@ class EditMemberWindow:
 
 
                 self.emw.destroy()
-            except ValueError:  # add_member() does not currently throw any exceptions.
-                pass
+            except Exception as e:
+                messagebox.showwarning(title="Problem adding member!", message="An exception occured:\n" + str(e))
         else:
             if self.context == EMWContext.NewMember:
                 messagebox.showwarning(title="Problem adding member!", message="Data not completely filled")
@@ -275,6 +275,7 @@ class EditMemberWindow:
 
     def validate_entries(self):
         ret = True
+        self.sync_dob()
         for field_name in self.entry_data.keys():
             if field_name == "member_type_radios":
                 pass

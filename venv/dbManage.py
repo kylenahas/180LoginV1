@@ -41,7 +41,7 @@ class LoginDatabase:
         if member_type_str == "monthly":
             exp_date = str(timedelta(days=30) + join_date)
         elif member_type_str == "annual":
-            exp_date = str(timedelta(years=1) + join_date)
+            exp_date = str(timedelta(days=360) + join_date)
         elif member_type_str == "student":
             exp_date = str(timedelta(days=30) + join_date)
         elif member_type_str == "punchcard":
@@ -141,7 +141,7 @@ class LoginDatabase:
         results = self.membersDB.search(member.name_first.matches(re.compile(name_first, re.IGNORECASE)))
 
         if not results:
-            raise ValueError("The entered last name could not be found in the database!")
+            raise ValueError("The entered first name could not be found in the database!")
 
         return results
 
