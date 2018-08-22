@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import *
 from tkinter import messagebox, StringVar, ttk
 from tkinter.font import Font
-from tkcalendar import Calendar, DateEntry
 from enum import Enum
 
 import pprint
@@ -325,9 +324,10 @@ class FormHelp:
                 # form.pack(side=LEFT, expand=YES, fill=X)
 
 
-                year = Spinbox(row, width=4, from_=1900, to=2018)
+
                 month = Spinbox(row, width=2, from_=1, to=12)
                 day = Spinbox(row, width=2, from_=1, to=31)
+                year = Spinbox(row, width=4, from_=1900, to=2018)
 
 
                 dob = [year, month, day]
