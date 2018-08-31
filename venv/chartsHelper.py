@@ -9,8 +9,8 @@ from datetime import datetime
 
 init_notebook_mode(connected=True)
 
-logfile = "log.json"
-# logfile = "/Users/kylenahas/Desktop/180login/log.json"
+# logfile = "log.json"
+logfile = "/Users/kylenahas/Desktop/180login/log.json"
 
 def simple_chart():
     trace0 = go.Bar(
@@ -44,7 +44,7 @@ class chartsHelper:
         print(self.logDB.all())
         
     def calculate_attendence(self, start_date=None, period=None):
-        attendence = {  "punchcard": [0, 0, 0, 0, 0, 0, 0, 0],
+        self.attendence = {  "punchcard": [0, 0, 0, 0, 0, 0, 0, 0],
                         "monthly": [0, 0, 0, 0, 0, 0, 0, 0],
                         "annual": [0, 0, 0, 0, 0, 0, 0, 0],
                         "student": [0, 0, 0, 0, 0, 0, 0, 0] }
@@ -56,8 +56,8 @@ class chartsHelper:
                 member_type_str = entry['member_type_str']
             except:
                 pass
-            attendence[member_type_str][wd] += 1
-        return attendence
+            self.attendence[member_type_str][wd] += 1
+        return self.attendence
     def create_attendence_chart(self):
         trace0 = go.Bar(
             x=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
@@ -89,3 +89,6 @@ class chartsHelper:
         return fig
 
 
+ch = chartsHelper()
+ch.calculate_attendence()
+print(ch.create_attendence_chart())

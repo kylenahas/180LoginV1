@@ -122,8 +122,10 @@ class EditMemberWindow:
                                                              "email": "Email",
                                                              "phone": "Phone Number",
                                                              "dob": "Date of Birth",
-                                                             "member_type": "Member Type"})
-            Button(self.emw, text="Add Member", command=self.enter_to_db).pack(side=BOTTOM, pady=10)
+                                                             "member_type": "Member Type",
+                                                             "member_opts": "Link Member"})
+            self.link_member_init()
+            Button(self.emw, text="Add Member", command=self.enter_to_db).grid(pady=(15, 0))
             self.entry_data["name_first"].focus()
         elif self.context == EMWContext.UpdateMember:
             self.entry_data = FormHelp.make_forms(self.emw, {   "id": "Member ID",
@@ -280,10 +282,37 @@ class EditMemberWindow:
                 pass
             elif field_name == "dob_arr":
                 pass
+            elif field_name == "member_opts" or field_name == "member_opts_vars":
+                pass
             else:
                 if self.entry_data[field_name].get() == "":
                     ret = False
         return ret
+
+    def link_member_init(self):
+        _vars = self.entry_data["member_opts_vars"]
+        _vars[1].config(command=lambda: self.link_member_toggle(opt="addon"))
+        _vars[2].config(command=lambda: self.link_member_toggle(opt="org"))
+
+    def link_member_toggle(self, opt):
+        _vars = self.entry_data["member_opts"]
+        form = self.entry_data["member_opts_vars"]
+        if opt == "addon":
+            if(_vars[1].get() == "1"):
+                _vars[2].set("0")
+                form[0].config(state=NORMAL)
+            elif(_vars[2].get() == "1"):
+                pass
+            else:
+                form[0].config(state=DISABLED)
+        elif opt == "org":
+            if(_vars[2].get() == "1"):
+                _vars[1].set("0")
+                form[0].config(state=NORMAL)
+            elif(_vars[1].get() == "1"):
+                pass
+            else:
+                form[0].config(state=DISABLED)
 
 
 class FormHelp:
@@ -291,25 +320,40 @@ class FormHelp:
         for field_name in entries.keys():
             if field_name == "member_type_radios" or field_name == "dob_arr":
                 pass
+            elif field_name == "member_opts" or field_name == "member_opts_vars":
+                pass
             else:
                 print(field_name + ": " + entries[field_name].get())
 
     def make_forms(root, fields):
         entries = {}
+        row = Frame(root)
+        row.grid()
+        row_number = 0
+        cs = 6  #Column Span
         for field_name in fields.keys():
-            row = Frame(root)
+            # row = Frame(root)
             lab = Label(row, width=15, text=fields[field_name])
-            row.pack(side=TOP, fill=X)
-            lab.pack(side=LEFT)
+            # row.pack(side=TOP, fill=X)
+            # lab.pack(side=LEFT)
+            # row.grid()
+            lab.grid(row=row_number, column=0, sticky=NSEW)
+            root.rowconfigure(row_number, weight=1)
+            root.columnconfigure(0, weight=1)
 
             if field_name == "member_type":
                 form = StringVar()
-                memberOpts = ["Punchcard", "Monthly", "Annual", "Student"]
+                memberOpts = ["Punchcard", "Monthly", "Student",
+                              "Organization", "Annual", "Volunteer"]
                 radios = []
+                i=0
                 for text in memberOpts:
                     rb = Radiobutton(row, text=text, var=form, value=text.lower())
-                    rb.pack(side=LEFT, anchor=NW)
+                    if i % 6 == 0 and i != 0:
+                        row_number += 1
+                    rb.grid(row=row_number, column=(i % 6)+1, columnspan=2, sticky=W)
                     radios.append(rb)
+                    i += 2
                 form.set("punchcard")
                 entries["member_type_radios"] = radios
             elif field_name == "dob":
@@ -333,25 +377,46 @@ class FormHelp:
                 dob = [year, month, day]
                 entries["dob_arr"] = dob
 
-                Label(row, text="Month:").pack(side=LEFT, fill=X)
-                month.pack(side=LEFT, fill=X)
-                Label(row, text="Day:").pack(side=LEFT, fill=X)
-                day.pack(side=LEFT, fill=X)
-                Label(row, text="Year:").pack(side=LEFT, fill=X)
-                year.pack(side=LEFT, fill=X)
+                Label(row, text="Month:").grid(row=row_number, column=1)
+                month.grid(row=row_number, column=2)
+                Label(row, text="Day:").grid(row=row_number, column=3)
+                day.grid(row=row_number, column=4)
+                Label(row, text="Year:").grid(row=row_number, column=5)
+                year.grid(row=row_number, column=6)
 
 
 
             elif field_name == "expiration_punches":
                 form = Spinbox(row, width=4,  from_=0, to=100)
-                form.pack(side=LEFT, expand=NO)
+                form.grid(row=row_number, column=1, columnspan=cs)
+
+            elif field_name == "member_opts":
+
+                form = [StringVar(), StringVar(), StringVar()]
+                form[1].set("0")
+                form[2].set("0")
+                addon = Checkbutton(row, text="Add-On", variable=form[1])
+                org = Checkbutton(row, text="Organization", variable=form[2])
+
+                addon.grid(row=row_number, column=1, columnspan=2, sticky=W)
+                org.grid(row=row_number, column=3, columnspan=2, sticky=W)
+
+                row_number+=1
+                link_id = Entry(row, state=DISABLED, textvariable=form[0])
+                link_id.grid(row=row_number, column=1, columnspan=4, sticky=W)
+
+                entries["member_opts_vars"] = [link_id, addon, org]
             else:
                 form = Entry(row)
-                form.pack(side=RIGHT, expand=YES, fill=X)
+                form.grid(row=row_number, column=1, columnspan=cs, sticky=NSEW)
+
+            row_number+=1
 
 
             entries[field_name] = form
         return entries
+
+
 
 
 class MemberLookup():
@@ -378,6 +443,7 @@ class MemberLookup():
         row3 = Frame(self.ml_enter)
         row3.pack(side=TOP, fill=X, padx=20, pady=10)
         Button(row3, command=self.search_for_member, text="Search for Member").pack()
+        Button(row3, command=self.members_logged_in, text="Members here now").pack()
 
 
 
@@ -391,8 +457,8 @@ class MemberLookup():
 
     def search_for_member(self, event=None):
         try:
-            self.search_string = self.first_name_entry.get()
-            self.search_results = my_db.query_member(self.search_string)
+            self.search_string = str(self.first_name_entry.get())
+            self.search_results = my_db.query_member(name_first=self.search_string)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
         except ValueError:
@@ -400,6 +466,17 @@ class MemberLookup():
                                    message="No members with first name \"" + self.first_name_entry.get() + "\" found!")
             self.ml_enter.focus()
             self.first_name_entry.focus_force()
+
+    def members_logged_in(self, event=None):
+        try:
+            self.search_string = "Today"
+            self.search_results = my_db.query_member(log_date=True)
+            self.display_search_results(self.search_results)
+            self.ml_enter.destroy()
+        except ValueError:
+            messagebox.showwarning(title="Problem locating members!",
+                                   message="No members logged in today!")
+            self.ml_enter.focus()
 
     def display_search_results(self, results):
 
@@ -457,6 +534,7 @@ class MemberLookup():
 
         Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1)
         Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2)
+        Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3)
 
         self.center(self.rwin)
         self.rwin.focus_force()
@@ -494,7 +572,14 @@ class MemberLookup():
             messagebox.showwarning(title="Problem locating member!",
                                    message="Please select a member from the list first")
 
-
+    def printStickers(self):
+        sticker = Barcoder()
+        for member in self.search_results:
+            member_id = member["id"]
+            name_str = member["name_first"] + " " + member["name_last"]
+            file = member["name_first"].lower() + "." + member["name_last"].lower()
+            member_type = member["member_type"].capitalize()
+            sticker.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type, fn=file)
 
 
 

@@ -136,13 +136,26 @@ class LoginDatabase:
         else:
             raise ValueError("The entered user ID could not be found in the database")
 
-    def query_member(self, name_first):
+    def query_member(self, name_first="-1", log_date=None):
         member = Query()
-        results = self.membersDB.search(member.name_first.matches(re.compile(name_first, re.IGNORECASE)))
 
-        if not results:
-            raise ValueError("The entered first name could not be found in the database!")
+        if name_first != "-1":
+            results = self.membersDB.search(member.name_first.matches(re.compile(name_first, re.IGNORECASE)))
 
-        return results
+            if not results:
+                raise ValueError("The entered first name could not be found in the database!")
+
+            return results
+        elif log_date:
+            today = date.today()
+            members_today = self.logDB.search(member.log_time.matches(re.compile(str(today), re.IGNORECASE)))
+            results = []
+            if not members_today:
+                raise ValueError("No members logged in today")
+            for memb in members_today:
+                member_id = memb["id"]
+                results.append(self.membersDB.get(member.id == member_id))
+            return results
+
 
 
