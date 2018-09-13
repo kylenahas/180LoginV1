@@ -152,8 +152,8 @@ class EditMemberWindow:
                 else:
                     self.entry_data[form].config(state=DISABLED)
             self.add_punches_button = Button(self.emw, text="Add 10 Punches", command=self.add_10_punches, state=DISABLED)
-            self.add_punches_button.pack(side=LEFT, pady=10, padx=20)
-            Button(self.emw, text="Update Member", command=self.enter_to_db).pack(side=RIGHT, pady=10, padx=20)
+            self.add_punches_button.grid(column=0, padx=20)
+            Button(self.emw, text="Update Member", command=self.enter_to_db).grid(column=1, padx=20)
 
     def retrieve_member(self, event):
         try:
@@ -208,7 +208,7 @@ class EditMemberWindow:
                     barcode = Barcoder()
 
                     barcode.create_barcode(new_member["id"])
-                    barcode.open_barcode()
+                    barcode.open_barcode(fp="exported_stickers/member_sticker.png")
 
                 elif self.context == EMWContext.UpdateMember:
                     updated_member = my_db.update_member(member_id=int(self.entry_data["id"].get()),
@@ -489,7 +489,7 @@ class MemberLookup():
         columns = {  "name_first": "First Name",
                      "name_last": "Last Name",
                      "id": "Member ID",
-                     "dob": "Date of Birth",
+                     "join_date": "Join Date",
                      "member_type": "Member Type"}
 
 
@@ -509,8 +509,15 @@ class MemberLookup():
         for item in results:
             arr = []
             for val in columns.keys():
-                arr.append(item[val])
-                iwidth = Font().measure(item[val]) + 10
+                if val == "join_date":
+                    join_date = datetime.strptime(item[val], '%Y-%m-%d %H:%M:%S.%f')
+                    join_date_str = str(join_date.year) + "-" + str(join_date.month) + "-" + str(join_date.day)
+                    arr.append(join_date_str)
+                    iwidth = Font().measure(join_date_str) + 10
+
+                else:
+                    arr.append(item[val])
+                    iwidth = Font().measure(item[val]) + 10
                 if self.tree.column(val, 'width') < iwidth:
                     self.tree.column(val, width=iwidth)
             self.tree.insert('', 'end', values=arr)
