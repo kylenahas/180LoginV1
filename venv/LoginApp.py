@@ -207,8 +207,14 @@ class EditMemberWindow:
 
                     barcode = Barcoder()
 
-                    barcode.create_barcode(new_member["id"])
-                    barcode.open_barcode(fp="exported_stickers/member_sticker.png")
+                    # barcode.create_barcode(new_member["id"])
+                    member_id = new_member["id"]
+                    name_str = new_member["name_first"] + " " + new_member["name_last"]
+                    file = new_member["name_first"].lower() + "." + new_member["name_last"].lower()
+                    member_type = new_member["member_type"].capitalize()
+                    barcode.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type, fn=file)
+
+                    barcode.open_barcode(fn="exported_stickers/"+file+".png")
 
                 elif self.context == EMWContext.UpdateMember:
                     updated_member = my_db.update_member(member_id=int(self.entry_data["id"].get()),
