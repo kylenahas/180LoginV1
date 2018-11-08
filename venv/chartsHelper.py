@@ -47,7 +47,9 @@ class chartsHelper:
         self.attendence = {  "punchcard": [0, 0, 0, 0, 0, 0, 0, 0],
                         "monthly": [0, 0, 0, 0, 0, 0, 0, 0],
                         "annual": [0, 0, 0, 0, 0, 0, 0, 0],
-                        "student": [0, 0, 0, 0, 0, 0, 0, 0] }
+                        "student": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "volunteer": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "organization": [0, 0, 0, 0, 0, 0, 0, 0] }
         for entry in self.logDB:
             dt = datetime.strptime(entry['log_time'], '%Y-%m-%d %H:%M:%S.%f')
             wd = dt.weekday()
@@ -79,8 +81,18 @@ class chartsHelper:
             y=self.attendence['student'],
             name="Student Members"
         )
+        trace4 = go.Bar(
+            x=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            y=self.attendence['volunteer'],
+            name="Volunteer Members"
+        )
+        trace5 = go.Bar(
+            x=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            y=self.attendence['organization'],
+            name="Organization Members"
+        )
 
-        data = [trace0, trace1, trace2, trace3]
+        data = [trace0, trace1, trace2, trace3, trace4, trace5]
         layout = go.Layout(
             barmode='stack'
         )
@@ -91,4 +103,4 @@ class chartsHelper:
 
 ch = chartsHelper()
 ch.calculate_attendence()
-print(ch.create_attendence_chart())
+plot(ch.create_attendence_chart())

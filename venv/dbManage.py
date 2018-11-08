@@ -18,11 +18,16 @@ from tinydb.operations import decrement
 import re
 
 
+def init():
+    global appDB
+    appDB = LoginDatabase()
+    
+
 class LoginDatabase:
     membersDB = TinyDB("members.json")
     logDB = TinyDB("log.json")
 
-    def add_member(self, first_name, last_name, email, phone, birthdate, member_type_str):
+    def add_member(self, first_name, last_name, email, phone, birthdate, member_type_str, link=None):
         join_date = datetime.now()
         exp_date = "-1"
         exp_punches = 0
@@ -58,7 +63,8 @@ class LoginDatabase:
                  "join_date": str(join_date),
                  "member_type": member_type_str,
                  "expiration_date": exp_date,
-                 "expiration_punches": exp_punches}
+                 "expiration_punches": exp_punches,
+                 "link": link}
 
         self.membersDB.insert(entry)
 
