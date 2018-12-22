@@ -13,6 +13,8 @@ from barcodeGen import *
 from memberWindow import EMWContext, EditMemberWindow, memberSignOffs
 from memberLookup import MemberLookup
 
+import memberDialog as memberDialog
+
 
 
 
@@ -81,33 +83,33 @@ class Splash(tk.Frame):
 
 
     def login_member(self, event):
+
+        # TODO: Auto Close window after 5 seconds
+
         try:
             member_id = int(self.scannerInput.get())
-            logged_member = config.appDB.log_member(member_id)
-            signOffs = memberSignOffs(6629793921526179)
-            info_str = "Member: " + logged_member["name_first"] + " " + logged_member["name_last"] + " logged in!\n\n"
-
-            if config.appDB.retrieve_member(member_id)["member_type"] == "punchcard":
-                info_str += "Punches left: " + str(logged_member["remaining_punches"]) + "\n\n"
-
-            info_str += signOffs.printSignOffs()
 
 
-            messagebox.showinfo(title="Logging in:", message=info_str)
-        except ValueError:
-            messagebox.showwarning(title="Problem logging in member!", message="Member not found!")
+            # info_str += signOffs.printSignOffs()
+
+
+            # messagebox.showinfo(title="Logging in:", message=info_str)
+
+            dialog = memberDialog.memberD(member_id=member_id)
+
+
+        except LookupError as e:
+            messagebox.showwarning(title="Problem logging in member!", message=e)
         except RuntimeError:
             messagebox.showwarning(title="Problem logging in member!", message="Member has used all their punches!\n\nRefill punches before entry!")
         finally:
+            # dialog.destroy()
             self.scannerInput.delete(0, END)
             super().focus_force()
             self.scannerInput.focus()
 
 
 
-
-# Setup DB
-# dbManage.init()
 
 # create the application
 splashWindow = Splash()
@@ -116,9 +118,7 @@ splashWindow = Splash()
 # here are method calls to the window manager class
 #
 splashWindow.master.title("180 Studios Login Manager")
-# splashWindow.master.minsize(500, 200)
-# splashWindow.master.maxsize(500, 200)
-# splashWindow.master.geometry("+200+400")
+
 splashWindow.center()
 
 # start the program

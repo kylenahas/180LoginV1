@@ -5,6 +5,7 @@ import time
 import pyperclip
 
 import config
+from barcodeGen import *
 
 class MemberLookup():
     def __init__(self, master=None):
@@ -57,7 +58,7 @@ class MemberLookup():
     def members_logged_in(self, event=None):
         try:
             self.search_string = "Today"
-            self.search_results = my_db.query_member(log_date=True)
+            self.search_results = config.appDB.query_member(log_date=True)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
         except ValueError:
@@ -101,7 +102,10 @@ class MemberLookup():
                     join_date_str = str(join_date.year) + "-" + str(join_date.month) + "-" + str(join_date.day)
                     arr.append(join_date_str)
                     iwidth = Font().measure(join_date_str) + 10
-
+                elif val == "member_type":
+                    member_type_str = config.member_types.get(item[val])
+                    arr.append(member_type_str)
+                    iwidth = Font().measure(member_type_str) + 10
                 else:
                     arr.append(item[val])
                     iwidth = Font().measure(item[val]) + 10
@@ -168,9 +172,14 @@ class MemberLookup():
 
     def printStickers(self):
         sticker = Barcoder()
+
         for member in self.search_results:
             member_id = member["id"]
             name_str = member["name_first"] + " " + member["name_last"]
             file = member["name_first"].lower() + "." + member["name_last"].lower()
-            member_type = member["member_type"].capitalize()
-            sticker.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type, fn=file)
+            member_type = member["member_type"]
+            member_type_str = str(config.member_types.get(member_type))
+            sticker.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type_str, fn=file)
+        messagebox.showinfo(title="Sticker Update Success",
+                            message="Stickers folder updated. See directions on how to print barcode.")
+        self.rwin.destroy()
