@@ -6,6 +6,7 @@ import pyperclip
 
 import config
 from barcodeGen import *
+from memberWindow import memberSignOffs
 
 class MemberLookup():
     def __init__(self, master=None):
@@ -106,6 +107,8 @@ class MemberLookup():
                     member_type_str = config.member_types.get(item[val])
                     arr.append(member_type_str)
                     iwidth = Font().measure(member_type_str) + 10
+                elif val == "link":
+                    pass
                 else:
                     arr.append(item[val])
                     iwidth = Font().measure(item[val]) + 10
@@ -130,9 +133,12 @@ class MemberLookup():
         self.buttons = Frame(self.rwin)
         self.buttons.grid()
 
-        Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1)
-        Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2)
-        Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3)
+        Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1, padx=3)
+        Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2, padx=3)
+        Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3, padx=3)
+        if config.sign_offs_enabled:
+            Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=4, padx=3)
+
 
         self.center(self.rwin)
         self.rwin.focus_force()
@@ -183,3 +189,14 @@ class MemberLookup():
         messagebox.showinfo(title="Sticker Update Success",
                             message="Stickers folder updated. See directions on how to print barcode.")
         self.rwin.destroy()
+
+    def edit_sign_offs(self):
+        cur_item = self.tree.focus()
+
+        try:
+            memberID = self.tree.item(cur_item)["values"][2]
+            sign_offs = memberSignOffs(member_id=memberID)
+            sign_offs.editWindow()
+        except IndexError:
+            messagebox.showwarning(title="Problem locating member!",
+                                   message="Please select a member from the list first")

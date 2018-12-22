@@ -230,7 +230,7 @@ class EditMemberWindow:
             self.emw.focus_force()
 
     def edit_sign_offs(self):
-        signOffs = memberSignOffs(member_id=self.entry_data["id"].get())
+        signOffs = memberSignOffs(member_id=int(self.entry_data["id"].get()))
         signOffs.editWindow()
 
     def add_credits(self):
@@ -387,6 +387,7 @@ class EditMemberWindow:
             if (_vars[1].get() == "1"):
                 _vars[2].set("0")
                 form[0].config(state=NORMAL)
+                form[0].focus_force()
             elif (_vars[2].get() == "1"):
                 pass
             else:
@@ -397,6 +398,7 @@ class EditMemberWindow:
             if (_vars[2].get() == "1"):
                 _vars[1].set("0")
                 form[0].config(state=NORMAL)
+                form[0].focus_force()
             elif (_vars[1].get() == "1"):
                 pass
             else:
@@ -519,11 +521,11 @@ class EditMemberWindow:
 
 
 class memberSignOffs:
-    def __init__(self, member_id=None):
+    def __init__(self, member_id):
         if member_id is None:
             raise ValueError("Sign Offs must be passed a member ID")
         else:
-            self.mid = member_id
+            self.mid = int(member_id)
 
     def editWindow(self):
         self.root = Toplevel()
@@ -541,7 +543,7 @@ class memberSignOffs:
     def populate_list(self):
         form = StringVar()
         row_number = 0
-        Label(self.root, text="Member is signed off on:").grid(row=0, column=0, pady=10, sticky=W)
+        Label(self.root, text="Member is signed off on:").grid(row=0, column=0, padx=15, pady=10, sticky=W)
 
         # sign_off_list = {  "woodshop": "Woodshop",
         #                    "shopbot": "ShopBot",
@@ -550,17 +552,44 @@ class memberSignOffs:
         #                    "machineshop": "Machine Shop",
         #                    "welding": "Welding"}
 
-        checks = []
+        self.checks = []
         i = 0
+        db_checks = config.appDB.get_member_sign_offs(member_id=self.mid)
         for activity in config.sign_off_list.keys():
-            cb = Checkbutton(self.root, text=sign_off_list[activity])
+            bv = BooleanVar()
+            bv.set(db_checks.get(activity, False))
+            cb = Checkbutton(self.root, text=config.sign_off_list[activity], variable=bv)
             # if i % 6 == 0 and i != 0:
             row_number += 1
             cb.grid(row=row_number, column=0, columnspan=2, sticky=W)
-            checks.append(cb)
+            self.checks.append(bv)
             # i += 2
-        Button(self.root, text="Save Member Sign-Offs").grid(column=0, pady=10)
+        save = Button(self.root, text="Save Member Sign-Offs", command=self.save_clicked)
+        save.grid(column=0, pady=10)
 
-    def printSignOffs(self):
-        retStr = "[X] Wood shop\n[X] Laser Cutter\n[  ] 3D Printer\n[  ] Machine Shop"
+    def save_clicked(self):
+        local_checks = self.generate_dict_from_edit_window()
+        config.appDB.set_member_sign_offs(member_id=self.mid, sign_offs=local_checks)
+        self.root.destroy()
+
+
+    def generate_dict_from_edit_window(self):
+        i=0
+        sign_offs = {}
+        for activity in config.sign_off_list.keys():
+            sign_offs[activity] = self.checks[i].get()
+            i += 1
+
+        return sign_offs
+
+
+    def printSignOffs(member_id):
+        checks = config.appDB.get_member_sign_offs(member_id=member_id)
+        retStr = ""
+        for activity in config.sign_off_list.keys():
+            if checks[activity]:
+                retStr += "[X] "
+            else:
+                retStr += "[  ] "
+            retStr += config.sign_off_list[activity] + "\n"
         return retStr

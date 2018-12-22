@@ -72,9 +72,9 @@ class memberD():
                         info_str += str(remaining.years) + " years, "
 
                     if remaining.months == 1:
-                        info_str += str(remaining.months) + " month, and "
+                        info_str += str(remaining.months) + " month and "
                     if remaining.months > 1:
-                        info_str += str(remaining.months) + " months, and "
+                        info_str += str(remaining.months) + " months and "
 
                     if remaining.days == 1:
                         info_str += str(remaining.days) + " day."
@@ -84,6 +84,8 @@ class memberD():
                 else:
                     info_str += "Membership is EXPIRED!!!"
 
+            if config.sign_offs_enabled:
+                info_str += "\n\n" + memberSignOffs.printSignOffs(member_id=member_id)
 
             return info_str
         except Exception as e:

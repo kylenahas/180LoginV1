@@ -19,6 +19,6 @@ sign_off_list = {"woodshop": "Woodshop",
                  "sewing": "Sewing",
                  "welding": "Welding"}
 
-sign_offs_enabled = False
+sign_offs_enabled = True
 member_link_enabled = True
-
+allow_multiple_scans_a_day = False

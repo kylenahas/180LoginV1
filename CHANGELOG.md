@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 
+## [0.9.1] - 2018-12-22
+### Added
+- Implemented Member Skills Sign Offs 
+### Changed
+- Signoffs enabled by default
+
 ## [0.9.0] - 2018-12-21
 ### Added
 - Student annual and Trial membership options

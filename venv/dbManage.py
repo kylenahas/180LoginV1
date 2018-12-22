@@ -17,6 +17,8 @@ from tinydb import *
 from tinydb.operations import decrement
 import re
 
+import config
+
 
 def init():
     global appDB
@@ -106,7 +108,7 @@ class LoginDatabase:
             self.membersDB.update(member_data, member_query.id == member_id)
             return member_data
         else:
-            raise ValueError("The entered user ID could not be found in the database")
+            raise LookupError("The entered user ID could not be found in the database")
 
 
     def log_member(self, member_id):
@@ -119,7 +121,7 @@ class LoginDatabase:
             visited_today = self.logDB.search((member_query.id == member_id) &
                                               (member_query.log_time.matches(re.compile(str(today), re.IGNORECASE))))
 
-            if visited_today:
+            if visited_today and not config.allow_multiple_scans_a_day:
                 raise LookupError("Member has already logged in today!")
 
             else:
@@ -168,6 +170,38 @@ class LoginDatabase:
                 member_id = memb["id"]
                 results.append(self.membersDB.get(member.id == member_id))
             return results
+
+    def get_member_sign_offs(self, member_id):
+        member_query = Query()
+        if self.membersDB.contains(member_query.id == member_id):
+            member_data = self.membersDB.get(member_query.id == member_id)
+            sign_offs = member_data.get("sign_offs", None)
+
+            if not sign_offs:
+                sign_offs_dict = {}
+                for activity in config.sign_off_list.keys():
+                    sign_offs_dict[activity] = False
+                sign_offs = sign_offs_dict
+
+            return sign_offs
+        else:
+            raise LookupError("The entered user ID could not be found in the database")
+
+    def set_member_sign_offs(self, member_id, sign_offs):
+        member_query = Query()
+        if self.membersDB.contains(member_query.id == member_id):
+            member_data = self.membersDB.get(member_query.id == member_id)
+
+            if not sign_offs:
+                for activity in config.sign_off_list.keys():
+                    sign_offs[activity] = False
+
+            member_data["sign_offs"] = sign_offs
+            self.membersDB.update(member_data, member_query.id == member_id)
+
+            return sign_offs
+        else:
+            raise LookupError("The entered user ID could not be found in the database")
 
 
 
