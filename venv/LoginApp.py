@@ -11,7 +11,7 @@ import config
 from dbManage import *
 from barcodeGen import *
 from memberWindow import EMWContext, EditMemberWindow, memberSignOffs
-from memberLookup import MemberLookup
+from memberLookup import MemberLookup, SMWContext
 
 import memberDialog as memberDialog
 
@@ -86,6 +86,8 @@ class Splash(tk.Frame):
 
         # TODO: Auto Close window after 5 seconds
 
+        searching = False
+
         try:
             member_id = int(self.scannerInput.get())
 
@@ -98,6 +100,10 @@ class Splash(tk.Frame):
             dialog = memberDialog.memberD(member_id=member_id)
 
 
+        except ValueError as e:
+            # messagebox.showwarning(title="Problem logging in member!", message=e)
+            MemberLookup(search_str=self.scannerInput.get(), context=SMWContext.SplashEntry)
+            searching = True
         except LookupError as e:
             messagebox.showwarning(title="Problem logging in member!", message=e)
         except RuntimeError:
@@ -105,8 +111,9 @@ class Splash(tk.Frame):
         finally:
             # dialog.destroy()
             self.scannerInput.delete(0, END)
-            super().focus_force()
-            self.scannerInput.focus()
+            if not searching:
+                super().focus_force()
+                self.scannerInput.focus()
 
 
 

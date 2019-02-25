@@ -6,6 +6,7 @@ import config
 from dbManage import *
 from forms import FormHelp
 from barcodeGen import *
+# from memberLookup import MemberLookup
 
 
 class EMWContext(Enum):
@@ -14,7 +15,7 @@ class EMWContext(Enum):
 
 
 class EditMemberWindow:
-    def __init__(self, master=None, context=EMWContext.NewMember):
+    def __init__(self, master=None, context=EMWContext.NewMember, member_id=None):
 
         # nmw == New Member Window
         self.emw = Toplevel()
@@ -28,6 +29,9 @@ class EditMemberWindow:
 
             self.punches_remaining_hide()
             self.expiration_date_hide()
+
+            if member_id:
+                self.retrieve_member(member_id=int(member_id))
 
     def center(self):
         self.emw.update_idletasks()
@@ -79,7 +83,7 @@ class EditMemberWindow:
             for form in self.entry_data.keys():
                 if form == "id":
                     self.entry_data[form].focus()
-                    self.entry_data[form].bind('<Return>', (lambda _: self.retrieve_member(self.entry_data[form])))
+                    self.entry_data[form].bind('<Return>', self.retrieve_member)
                 elif form == "member_type":
                     self.entry_data[form].config(state=DISABLED)
                 # elif form == "member_type_radios":
@@ -108,7 +112,10 @@ class EditMemberWindow:
 
             Button(self.emw, text="Update Member", command=self.enter_to_db).grid(column=0, pady=20)
 
-    def retrieve_member(self, event):
+    def retrieve_member(self, event=None, member_id=None):
+        if member_id:
+            self.entry_data["id"].delete(0, END)
+            self.entry_data["id"].insert(0, int(member_id))
         try:
             member_info = config.appDB.retrieve_member(int(self.entry_data["id"].get()))
 
@@ -150,11 +157,19 @@ class EditMemberWindow:
             if config.sign_offs_enabled:
                 self.edit_member_sign_offs.config(state=NORMAL)
 
-        except ValueError:
+        except LookupError:
             messagebox.showwarning(title="Problem retrieving member data!", message="Member not found!")
             self.emw.focus_force()
             self.entry_data["id"].delete(0, END)
             self.entry_data["id"].focus()
+
+        except ValueError as e:
+            from memberLookup import MemberLookup, SMWContext
+            # messagebox.showwarning(title="Problem logging in member!", message=e)
+            search = self.entry_data["id"].get()
+            self.emw.destroy()
+            MemberLookup(search_str=search, context=SMWContext.UpdateMember)
+
 
     def enter_to_db(self):
         fh = FormHelp()
@@ -182,15 +197,20 @@ class EditMemberWindow:
 
                         barcode = Barcoder()
 
-                        # barcode.create_barcode(new_member["id"])
                         member_id = new_member["id"]
                         name_str = new_member["name_first"] + " " + new_member["name_last"]
                         file = new_member["name_first"].lower() + "." + new_member["name_last"].lower()
-                        # member_type = new_member["member_type"].capitalize()
-                        barcode.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type,
-                                                     fn=file)
 
-                        barcode.open_barcode(fn="exported_stickers/" + file + ".png")
+                        if config.zebra_print_enabled:
+                            if member_type_str == "student_annual":
+                                member_type_str == "student"
+                            barcode.print_zebra(member_id, name_str=name_str, member_type_str=member_type_str.capitalize())
+
+                        else:
+                            # member_type = new_member["member_type"].capitalize()
+                            barcode.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type,
+                                                         fn=file)
+                            barcode.open_barcode(fn="exported_stickers/" + file + ".png")
 
                     elif self.context == EMWContext.UpdateMember:
                         # if member_type == "monthly" or member_type == "annual" \

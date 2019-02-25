@@ -3,18 +3,40 @@ from tkinter.font import Font
 from datetime import datetime, date, time, timedelta
 import time
 import pyperclip
+from enum import Enum
 
 import config
 from barcodeGen import *
-from memberWindow import memberSignOffs
+from memberWindow import EditMemberWindow, EMWContext
+import memberDialog as memberDialog
+
+class SMWContext(Enum):
+    Search = 1
+    SplashEntry = 2
+    UpdateMember = 3
+
 
 class MemberLookup():
-    def __init__(self, master=None):
-
-        # nmw == New Member Window
+    def __init__(self, master=None, search_str=None, context=None):
         self.ml_enter = Toplevel()
+        self.first_name_entry_sv = StringVar()
+        # if not search_str:
+            # nmw == New Member Window
+
         self.populate_searcher()
         self.center(self.ml_enter)
+        self.context = SMWContext.Search
+        if search_str:
+            self.ml_enter.withdraw()
+            self.context = context
+
+            self.first_name_entry_sv.set(str(search_str))
+            self.search_for_member(event=None)
+
+
+
+
+
 
 
     def populate_searcher(self):
@@ -24,7 +46,7 @@ class MemberLookup():
 
         row2 = Frame(self.ml_enter)
         row2.pack(side=TOP, fill=X, padx=20, pady=10)
-        self.first_name_entry = Entry(row2)
+        self.first_name_entry = Entry(row2, textvariable=self.first_name_entry_sv)
         self.first_name_entry.pack()
         self.first_name_entry.focus()
         self.first_name_entry.bind('<Return>', self.search_for_member)
@@ -46,13 +68,14 @@ class MemberLookup():
 
     def search_for_member(self, event=None):
         try:
-            self.search_string = str(self.first_name_entry.get())
+            self.search_string = str(self.first_name_entry_sv.get())
             self.search_results = config.appDB.query_member(name_first=self.search_string)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
         except ValueError:
             messagebox.showwarning(title="Problem locating member!",
-                                   message="No members with first name \"" + self.first_name_entry.get() + "\" found!")
+                                   message="No members with first name \"" + self.first_name_entry_sv.get() + "\" found!")
+            self.ml_enter.deiconify()
             self.ml_enter.focus()
             self.first_name_entry.focus_force()
 
@@ -71,9 +94,9 @@ class MemberLookup():
 
         # Based heavily around: https://pyinmyeye.blogspot.com/2012/07/tkinter-multi-column-list-demo.html
 
-        self.rwin = Toplevel()
+        self.results_window = Toplevel()
 
-        self.rwin.title("Search Results for: " + self.search_string)
+        self.results_window.title("Search Results for: " + self.search_string)
 
         columns = {  "name_first": "First Name",
                      "name_last": "Last Name",
@@ -86,7 +109,7 @@ class MemberLookup():
         for k in columns.keys():
             columnKeys.append(k)
 
-        self.tree = ttk.Treeview(self.rwin, columns=columnKeys, show="headings")
+        self.tree = ttk.Treeview(self.results_window, columns=columnKeys, show="headings")
 
         for dbName in columns.keys():
             # tree.heading(c, text=c.title(),
@@ -117,8 +140,8 @@ class MemberLookup():
             self.tree.insert('', 'end', values=arr)
 
 
-        ysb = ttk.Scrollbar(self.rwin, orient=VERTICAL, command=self.tree.yview)
-        xsb = ttk.Scrollbar(self.rwin, orient=HORIZONTAL, command=self.tree.xview)
+        ysb = ttk.Scrollbar(self.results_window, orient=VERTICAL, command=self.tree.yview)
+        xsb = ttk.Scrollbar(self.results_window, orient=HORIZONTAL, command=self.tree.xview)
 
         self.tree['yscroll'] = ysb.set
         self.tree['xscroll'] = xsb.set
@@ -127,21 +150,30 @@ class MemberLookup():
         ysb.grid(row=0, column=1, sticky=NS)
         xsb.grid(row=1, column=0, sticky=EW)
 
-        self.rwin.rowconfigure(0, weight=1)
-        self.rwin.columnconfigure(0, weight=1)
+        self.results_window.rowconfigure(0, weight=1)
+        self.results_window.columnconfigure(0, weight=1)
 
-        self.buttons = Frame(self.rwin)
+        self.buttons = Frame(self.results_window)
         self.buttons.grid()
+        
+        if self.context == SMWContext.Search:
+            Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1, padx=3)
+            Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2, padx=3)
+            Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3, padx=3)
+            if config.sign_offs_enabled:
+                Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=4, padx=3)
+                
+        elif self.context == SMWContext.SplashEntry:
+            Button(self.buttons, text="Copy Member ID", command=self.copyMID).grid(row=2, column=1, padx=3)
+            Button(self.buttons, text="Login Member", command=self.search_return).grid(row=2, column=2, padx=3)
 
-        Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1, padx=3)
-        Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2, padx=3)
-        Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3, padx=3)
-        if config.sign_offs_enabled:
-            Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=4, padx=3)
+        elif self.context == SMWContext.UpdateMember:
+            Button(self.buttons, text="Copy Member ID", command=self.copyMID).grid(row=2, column=1, padx=3)
+            Button(self.buttons, text="Edit Member", command=self.search_return).grid(row=2, column=2, padx=3)
 
 
-        self.center(self.rwin)
-        self.rwin.focus_force()
+        self.center(self.results_window)
+        self.results_window.focus_force()
 
 
     def newBarcode(self):
@@ -150,12 +182,25 @@ class MemberLookup():
 
         try:
             memberID = self.tree.item(cur_item)["values"][2]
+            name_first = self.tree.item(cur_item)["values"][0]
+            name_last = self.tree.item(cur_item)["values"][1]
+            member_type_str = self.tree.item(cur_item)["values"][4]
+            member_types_inv = {v: k for k, v in config.member_types.items()}  # https://stackoverflow.com/a/483833
+            member_type = member_types_inv.get(member_type_str, "")
+
             print(memberID)
             barcode = Barcoder()
 
-            barcode.create_barcode(memberID)
-            barcode.open_barcode()
-            self.rwin.destroy()
+            name_str = name_first + " " + name_last
+
+            if config.zebra_print_enabled:
+                barcode.print_zebra(memberID, name_str=name_str, member_type_str=member_type)
+
+            else:
+                barcode.create_barcode(memberID)
+                barcode.open_barcode()
+
+            self.results_window.destroy()
         except IndexError:
             messagebox.showwarning(title="Problem locating member!",
                                    message="Please select a member from the list first")
@@ -171,7 +216,7 @@ class MemberLookup():
             pyperclip.copy(memberID)
             messagebox.showinfo(title="Copy Success",
                                 message="Member ID copied to clipboard. Paste in a scanner input, then press enter to use.")
-            self.rwin.destroy()
+            self.results_window.destroy()
         except IndexError:
             messagebox.showwarning(title="Problem locating member!",
                                    message="Please select a member from the list first")
@@ -188,7 +233,7 @@ class MemberLookup():
             sticker.create_sticker_image(member_id, name_str=name_str, member_type_str=member_type_str, fn=file)
         messagebox.showinfo(title="Sticker Update Success",
                             message="Stickers folder updated. See directions on how to print barcode.")
-        self.rwin.destroy()
+        self.results_window.destroy()
 
     def edit_sign_offs(self):
         cur_item = self.tree.focus()
@@ -200,3 +245,31 @@ class MemberLookup():
         except IndexError:
             messagebox.showwarning(title="Problem locating member!",
                                    message="Please select a member from the list first")
+
+    def search_return(self):
+        cur_item = self.tree.focus()
+        try:
+            member_id = self.tree.item(cur_item)["values"][2]
+            self.results_window.destroy()
+
+            if self.context == SMWContext.SplashEntry:
+
+                try:
+                    memberDialog.memberD(member_id=member_id)
+                    pass
+                except LookupError as e:
+                    messagebox.showwarning(title="Problem logging in member!", message=e)
+                except RuntimeError:
+                    messagebox.showwarning(title="Problem logging in member!",
+                                           message="Member has used all their punches!\n\nRefill punches before entry!")
+
+            elif self.context == SMWContext.UpdateMember:
+                EditMemberWindow(context=EMWContext.UpdateMember, member_id=int(member_id))
+                # print("Edit member: "+ member_id)
+                
+
+        except IndexError:
+            messagebox.showwarning(title="Problem locating member!",
+                                   message="Please select a member from the list first")
+        
+        

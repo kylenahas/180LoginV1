@@ -81,7 +81,7 @@ class LoginDatabase:
             member_data = self.membersDB.get(member_query.id == member_id)
             return member_data
         else:
-            raise ValueError("The entered user ID could not be found in the database")
+            raise LookupError("The entered user ID could not be found in the database")
 
     def update_member(self, member_id, first_name, last_name, email, phone, birthdate, member_type_str,
                       expiration_punches=-1, expiration_date="-1", link=None):

@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Zebra Printer support
 ### Changed
+- Member scan fields are now searchable
 
 ## [0.9.1] - 2018-12-22
 ### Added
