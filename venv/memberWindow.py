@@ -11,7 +11,7 @@ from barcodeGen import *
 
 class EMWContext(Enum):
     NewMember = 1
-    UpdateMember = 2
+    EditMember = 2
 
 
 class EditMemberWindow:
@@ -24,7 +24,7 @@ class EditMemberWindow:
         self.center()
         if self.context == EMWContext.NewMember:
             self.emw.title("New Member")
-        elif self.context == EMWContext.UpdateMember:
+        elif self.context == EMWContext.EditMember:
             self.emw.title("Update Member")
 
             self.punches_remaining_hide()
@@ -62,7 +62,7 @@ class EditMemberWindow:
 
             Button(self.emw, text="Add Member", command=self.enter_to_db).grid(pady=(15, 0))
             self.entry_data["name_first"].focus()
-        elif self.context == EMWContext.UpdateMember:
+        elif self.context == EMWContext.EditMember:
             forms = {"id": "Member ID",
                      "name_first": "First Name",
                      "name_last": "Last Name",
@@ -168,7 +168,7 @@ class EditMemberWindow:
             # messagebox.showwarning(title="Problem logging in member!", message=e)
             search = self.entry_data["id"].get()
             self.emw.destroy()
-            MemberLookup(search_str=search, context=SMWContext.UpdateMember)
+            MemberLookup(search_str=search, context=SMWContext.EditMember)
 
 
     def enter_to_db(self):
@@ -177,7 +177,7 @@ class EditMemberWindow:
         # printed_vals = fh.print_values(entries=self.entry_data)
         try:
             if self.validate_entries():
-                print("Form ok!")
+                # print("Form ok!")
                 member_type = self.entry_data["member_type"].get()
                 member_types_inv = {v: k for k, v in config.member_types.items()}  # https://stackoverflow.com/a/483833
                 member_type_str = member_types_inv.get(member_type)
@@ -212,7 +212,7 @@ class EditMemberWindow:
                                                          fn=file)
                             barcode.open_barcode(fn="exported_stickers/" + file + ".png")
 
-                    elif self.context == EMWContext.UpdateMember:
+                    elif self.context == EMWContext.EditMember:
                         # if member_type == "monthly" or member_type == "annual" \
                         #         or member_type == "student" or member_type == "student_annual":
                         #     self.sync_exp_date()
@@ -241,7 +241,7 @@ class EditMemberWindow:
             else:
                 if self.context == EMWContext.NewMember:
                     messagebox.showwarning(title="Problem adding member!", message="Data not completely filled")
-                elif self.context == EMWContext.UpdateMember:
+                elif self.context == EMWContext.EditMember:
                     messagebox.showwarning(title="Problem updating member!", message="Data not completely filled")
 
                 self.emw.focus_force()

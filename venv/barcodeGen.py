@@ -63,7 +63,7 @@ class Barcoder:
         sticker.save(fp="exported_stickers/"+fn+".png", dpi=(dpi, dpi))
 
 
-    def print_zebra(self, member_id, name_str="Member Name", member_type_str="Member_type"):
+    def print_zebra(self, member_id, name_str="Member Name", member_type_str="Member_type", dry_run=False):
 
         printer = zebra()
 
@@ -81,14 +81,14 @@ class Barcoder:
         ^PQ1,0,1,Y^XZ
         """
 
-        if __name__ == "__main__":
+        if dry_run:
             print('Printer queues found:', printer.getqueues())
             print("ZPL Doc: ")
             print(z_design)
-
-        printer.setqueue(config.zebra_printer_name)
-        printer.setup(direct_thermal=True, label_height=(203, 32), label_width=406)  # 2" x 1" direct thermal label
-        printer.output(z_design)
+        else:
+            printer.setqueue(config.zebra_printer_name)
+            printer.setup(direct_thermal=True, label_height=(203, 32), label_width=406)  # 2" x 1" direct thermal label
+            printer.output(z_design)
 
 
 

@@ -7,7 +7,7 @@ import re
 
 from datetime import datetime
 
-init_notebook_mode(connected=True)
+# init_notebook_mode(connected=True)
 
 # logfile = "log.json"
 logfile = "/Users/kylenahas/Desktop/180login/log.json"
@@ -34,8 +34,10 @@ def simple_chart():
 
 
 class chartsHelper:
-    def __init__(self):
-        self.logDB = TinyDB(logfile)
+    def __init__(self, log=None):
+        if not log:
+            log = logfile
+        self.logDB = TinyDB(log)
         # self.get_entries_of_member_type()
 
 
@@ -100,7 +102,7 @@ class chartsHelper:
         fig = go.Figure(data=data, layout=layout)
         return fig
 
-
-ch = chartsHelper()
-ch.calculate_attendence()
-plot(ch.create_attendence_chart())
+if __name__ == '__main__':
+    ch = chartsHelper()
+    ch.calculate_attendence()
+    plot(ch.create_attendence_chart())

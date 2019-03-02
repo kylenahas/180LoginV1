@@ -7,13 +7,13 @@ from enum import Enum
 
 import config
 from barcodeGen import *
-from memberWindow import EditMemberWindow, EMWContext
+from memberWindow import EditMemberWindow, EMWContext, memberSignOffs
 import memberDialog as memberDialog
 
 class SMWContext(Enum):
     Search = 1
     SplashEntry = 2
-    UpdateMember = 3
+    EditMember = 3
 
 
 class MemberLookup():
@@ -32,12 +32,6 @@ class MemberLookup():
 
             self.first_name_entry_sv.set(str(search_str))
             self.search_for_member(event=None)
-
-
-
-
-
-
 
     def populate_searcher(self):
         row1 = Frame(self.ml_enter)
@@ -72,7 +66,7 @@ class MemberLookup():
             self.search_results = config.appDB.query_member(name_first=self.search_string)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
-        except ValueError:
+        except LookupError:
             messagebox.showwarning(title="Problem locating member!",
                                    message="No members with first name \"" + self.first_name_entry_sv.get() + "\" found!")
             self.ml_enter.deiconify()
@@ -80,12 +74,14 @@ class MemberLookup():
             self.first_name_entry.focus_force()
 
     def members_logged_in(self, event=None):
+        # Displays members logged in during the current calendar day
         try:
             self.search_string = "Today"
-            self.search_results = config.appDB.query_member(log_date=True)
+            today = date.today()
+            self.search_results = config.appDB.query_member(log_date=today)
             self.display_search_results(self.search_results)
             self.ml_enter.destroy()
-        except ValueError:
+        except LookupError:
             messagebox.showwarning(title="Problem locating members!",
                                    message="No members logged in today!")
             self.ml_enter.focus()
@@ -112,8 +108,6 @@ class MemberLookup():
         self.tree = ttk.Treeview(self.results_window, columns=columnKeys, show="headings")
 
         for dbName in columns.keys():
-            # tree.heading(c, text=c.title(),
-            #                   command=lambda c=c: self._column_sort(c, MCListDemo.SortDir))
             self.tree.column(dbName, width=Font().measure(columns[dbName]) + 2)
             self.tree.heading(dbName, text=columns[dbName])
 
@@ -156,20 +150,20 @@ class MemberLookup():
         self.buttons = Frame(self.results_window)
         self.buttons.grid()
         
-        if self.context == SMWContext.Search:
+        if self.context == SMWContext.Search:  # In search for members window
             Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1, padx=3)
             Button(self.buttons, text="Copy Member ID",  command=self.copyMID).grid(row=2, column=2, padx=3)
-            Button(self.buttons, text="Print list to stickers",  command=self.printStickers).grid(row=2, column=3, padx=3)
             if config.sign_offs_enabled:
-                Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=4, padx=3)
+                Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=3, padx=3)
                 
-        elif self.context == SMWContext.SplashEntry:
-            Button(self.buttons, text="Copy Member ID", command=self.copyMID).grid(row=2, column=1, padx=3)
+        elif self.context == SMWContext.SplashEntry:  # In search window popped up from splash (first) screen
+            Button(self.buttons, text="Print new barcode", command=self.newBarcode).grid(row=2, column=1, padx=3)
             Button(self.buttons, text="Login Member", command=self.search_return).grid(row=2, column=2, padx=3)
+            if config.sign_offs_enabled:
+                Button(self.buttons, text="View Sign Offs", command=self.edit_sign_offs).grid(row=2, column=3, padx=3)
 
-        elif self.context == SMWContext.UpdateMember:
-            Button(self.buttons, text="Copy Member ID", command=self.copyMID).grid(row=2, column=1, padx=3)
-            Button(self.buttons, text="Edit Member", command=self.search_return).grid(row=2, column=2, padx=3)
+        elif self.context == SMWContext.EditMember:  # In search window popped up from edit member window
+            Button(self.buttons, text="Edit Member", command=self.search_return).grid(row=2, column=1, padx=3)
 
 
         self.center(self.results_window)
@@ -186,7 +180,7 @@ class MemberLookup():
             name_last = self.tree.item(cur_item)["values"][1]
             member_type_str = self.tree.item(cur_item)["values"][4]
             member_types_inv = {v: k for k, v in config.member_types.items()}  # https://stackoverflow.com/a/483833
-            member_type = member_types_inv.get(member_type_str, "")
+            member_type = member_types_inv.get(member_type_str, "").capitalize()
 
             print(memberID)
             barcode = Barcoder()
@@ -211,8 +205,8 @@ class MemberLookup():
 
         try:
             memberID = self.tree.item(cur_item)["values"][2]
-            print("Member ID Copied!")
-            print(memberID)
+            # print("Member ID Copied!")
+            # print(memberID)
             pyperclip.copy(memberID)
             messagebox.showinfo(title="Copy Success",
                                 message="Member ID copied to clipboard. Paste in a scanner input, then press enter to use.")
@@ -263,13 +257,9 @@ class MemberLookup():
                     messagebox.showwarning(title="Problem logging in member!",
                                            message="Member has used all their punches!\n\nRefill punches before entry!")
 
-            elif self.context == SMWContext.UpdateMember:
-                EditMemberWindow(context=EMWContext.UpdateMember, member_id=int(member_id))
-                # print("Edit member: "+ member_id)
-                
+            elif self.context == SMWContext.EditMember:
+                EditMemberWindow(context=EMWContext.EditMember, member_id=int(member_id))
 
         except IndexError:
             messagebox.showwarning(title="Problem locating member!",
                                    message="Please select a member from the list first")
-        
-        

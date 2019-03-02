@@ -76,7 +76,7 @@ class Splash(tk.Frame):
         EditMemberWindow(context=EMWContext.NewMember)
 
     def update_member_pushed(self):
-        EditMemberWindow(context=EMWContext.UpdateMember)
+        EditMemberWindow(context=EMWContext.EditMember)
 
     def lookup_member_pushed(self):
         MemberLookup()

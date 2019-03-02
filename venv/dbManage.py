@@ -29,6 +29,15 @@ class LoginDatabase:
     membersDB = TinyDB("members.json")
     logDB = TinyDB("log.json")
 
+    """ add_member: Adds a new member to the database. All parameters but link are required. 
+                    Expiration date is automatically set using the member date and current time. Current time 
+                    is recorded. A 16 digit numerical ID is generated and assigned based off the date and member's name
+                    and checked against the database. If the ID has been already been used, it waits .1 second and 
+                    tries again until an unused ID has been generated. Also protects against IDs that are less than 16
+                    digits long, as sometimes they were generated that were too short.
+                    
+                    Returns: Dictionary of the data entered into the database """
+
     def add_member(self, first_name, last_name, email, phone, birthdate, member_type_str, link=None):
         join_date = datetime.now()
 
@@ -74,19 +83,31 @@ class LoginDatabase:
 
         return entry
 
+    """ retrieve_member: Upon being passed a member ID, checks if the member exists (and not deleted) and then 
+                            returns the member's data. Raises LookupError if the member does not exits.
+                            
+                            Returns: Document type containing data of the selected member in the members database"""
 
     def retrieve_member(self, member_id):
         member_query = Query()
         if self.membersDB.contains(member_query.id == member_id):
             member_data = self.membersDB.get(member_query.id == member_id)
+            if member_data.get("deleted", False):
+                raise LookupError("The entered user ID could not be found in the database")
             return member_data
         else:
             raise LookupError("The entered user ID could not be found in the database")
 
+    """ update_member: Updates a member in the database. With the exception of expiration_punches, expiration_date
+                            and link, all of the member data must be passed in. Currently does not support passing 
+                            in just the parameters you want to update. In the future, might consider using **kwargs
+                            as a more flexible update. Raises a LookupError if the associated member cannot be found.
+
+                            Returns: List of documents containing data of the selected member in the members database"""
+
     def update_member(self, member_id, first_name, last_name, email, phone, birthdate, member_type_str,
                       expiration_punches=-1, expiration_date="-1", link=None):
 
-        # TODO: Implement update. Currently just adds new member
 
         member_query = Query()
 
@@ -110,6 +131,18 @@ class LoginDatabase:
         else:
             raise LookupError("The entered user ID could not be found in the database")
 
+    """ log_member: Logs in member by adding their member_id to the log database, along with:
+                        * Log Date
+                        * First/Last name
+                        * Member Type
+                        * Expiration Date/Punches Remaining
+                        * Link (if Applicable) 
+                    If a member is a punchcard member, one punch is removed from their account.
+                    If the member has already logged in during the past day (since midnight), and the debug feature 
+                    "config.allow_multiple_scans_a_day" is False, a LookupError will be raised, indicating that the
+                    member has already logged in today.
+    
+                    Returns: List type of the log entry """
 
     def log_member(self, member_id):
         logged_time = datetime.now()
@@ -150,26 +183,51 @@ class LoginDatabase:
         else:
             raise LookupError("The entered user ID could not be found in the database")
 
+    """ query_member: Performs a regex search on the database, by member's first name or current day. Ignores members
+                        marked as deleted. The parameter "log_date" can be passed True to use the current day, or a 
+                        date object to specify a certain day. If no members match the name, or nobody has logged in
+                        today, a LookupError is raised.
+
+                        Returns: List of documents containing data of all the members matching the search in the 
+                            members database """
+
     def query_member(self, name_first="-1", log_date=None):
         member = Query()
 
         if name_first != "-1":
-            results = self.membersDB.search(member.name_first.matches(re.compile(name_first, re.IGNORECASE)))
+            results = self.membersDB.search((member.name_first.matches(re.compile(name_first, re.IGNORECASE)))
+                                            & ~(member.deleted == True))
+
 
             if not results:
-                raise ValueError("The entered first name could not be found in the database!")
+                raise LookupError("The entered first name could not be found in the database!")
 
             return results
         elif log_date:
-            today = date.today()
-            members_today = self.logDB.search(member.log_time.matches(re.compile(str(today), re.IGNORECASE)))
+            if log_date == True:
+                log_date = date.today()
+            members_today = self.logDB.search((member.log_time.matches(re.compile(str(log_date), re.IGNORECASE)))
+                                              & ~(member.deleted == True))
+
             results = []
             if not members_today:
-                raise ValueError("No members logged in today")
+                raise LookupError("No members logged in today")
             for memb in members_today:
                 member_id = memb["id"]
                 results.append(self.membersDB.get(member.id == member_id))
             return results
+        else:
+            raise LookupError("Invalid search query.")
+
+
+    """ get_member_sign_offs: When given a member ID. this function retrieves the member's sign ins from the member 
+                                database. If the member does not have any sign offs, generates an empty dict containing
+                                the sign-offs listed in config.sign_off_list. The dict should only contain booleans.
+                                If the member ID does not exist in the database, a LookupError is raised.
+
+                            Returns: Dictionary containing the skills a member has been signed off on. If the member
+                             does not have any recorded sign-offs, generates a dict of all the sign-offs with 
+                             the value False """
 
     def get_member_sign_offs(self, member_id):
         member_query = Query()
@@ -187,6 +245,12 @@ class LoginDatabase:
         else:
             raise LookupError("The entered user ID could not be found in the database")
 
+    """ set_member_sign_offs: Updates the sign-offs for a given member. 
+
+                                Returns: Dictionary containing the skills a member has been signed off on. If the member
+                                 does not have any recorded sign-offs, generates a dict of all the sign-offs with 
+                                 the value False """
+
     def set_member_sign_offs(self, member_id, sign_offs):
         member_query = Query()
         if self.membersDB.contains(member_query.id == member_id):
@@ -202,6 +266,16 @@ class LoginDatabase:
             return sign_offs
         else:
             raise LookupError("The entered user ID could not be found in the database")
+
+    def delete_member(self, member_id, hard_delete=False):
+        member_query = Query()
+        if self.membersDB.contains(member_query.id == member_id):
+            member_data = self.membersDB.get(member_query.id == member_id)
+            member_data["deleted"] = True
+            self.membersDB.update(member_data, member_query.id == member_id)
+        else:
+            raise LookupError("The entered user ID could not be found in the database")
+
 
 
 

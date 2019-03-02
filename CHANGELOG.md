@@ -6,8 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Zebra Printer support
 ### Changed
+
+
+## [0.9.3] - 2019-3-1
+### Added
+- AdminApp, a sandbox to do one off functions that don't belong in the main UI
+    - Includes it's own console and easy (but ugly) button creation
+- dbManage.py is now documented
+- Members can now be soft-deleted. Their info is not removed from the database, but the member has a hidden "deleted" attribute added to their profile. Deleted members will not be shown in search results.
+### Changed
+- Buttons in search windows have been revised
+- Fixed Sign-Offs in search window
+
+## [0.9.2] - 2019-2-25
+
+### Added
+
+- Zebra Printer support
+
+### Changed
+
 - Member scan fields are now searchable
 
 ## [0.9.1] - 2018-12-22
