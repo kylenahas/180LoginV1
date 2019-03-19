@@ -41,6 +41,18 @@ class EditMemberWindow:
         y = (self.emw.winfo_screenheight() // 2) - (height // 2)
         self.emw.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
+    """ populate(): This function is responsible for drawing the entry fields and text labels in both "New"
+                    and "Update" member windows. The context is determined when the class is initialized. 
+                    Valid contexts are:
+                        * EMWContext.NewMember
+                        * EMWContext.EditMember
+                    Both contexts define a dict of the forms to be created, the key corresponds to the value in the 
+                    database, and the value corresponds to the text displayed before the form.
+                    The EditMember context disables all forms as they are created, but leaves the ID entry field
+                    enabled. The return key is bound to "self.retrieve_member", which pulls in all data for the member
+                    and fills the forms (from that function).
+                        """
+
     def populate(self):
 
         if self.context == EMWContext.NewMember:
@@ -292,6 +304,10 @@ class EditMemberWindow:
             return dob_str
         else:
             dob = self.entry_data["dob"].get().split("-")
+            if len(dob) is not 3:  # Isn't in proper xxxx-xx-xx format. Reset to a valid one.
+                dob = ["1900", "01", "01"]
+                print("Fixed invalid dob")
+
 
             # Year Entry
             self.entry_data["dob_arr"][0].delete(0, END)

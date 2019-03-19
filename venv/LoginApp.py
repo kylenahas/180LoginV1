@@ -23,6 +23,17 @@ import memberDialog as memberDialog
 #     NewMember = 1
 #     UpdateMember = 2
 
+class StdoutRedirector(object): # https://stackoverflow.com/q/18517084
+    def __init__(self, append_string):
+        self.str = append_string
+
+    def write(self,string):
+        f = open("logfile.txt", "a")
+        f.write(self.str + string + "\n")
+        f.close()
+
+
+
 
 class Splash(tk.Frame):
     # global scanner_input_sv
@@ -31,6 +42,9 @@ class Splash(tk.Frame):
         super().__init__(master)
         self.pack()
         self.create_splash()
+        if config.log_errors_to_file:
+            sys.stdout = StdoutRedirector("OUT>> ")
+            sys.stderr = StdoutRedirector("ERR>> ")
 
     def create_splash(self):
         self.scannerLabelText = tk.Label(text='Scan Member Card:')

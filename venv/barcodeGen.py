@@ -2,7 +2,6 @@ import barcode
 from PIL import Image, ImageDraw, ImageFont
 from barcode.writer import ImageWriter
 import subprocess, os, platform
-from simple_zpl2 import ZPLDocument, Code128_Barcode, Code39_Barcode, NetworkPrinter
 from zebra import zebra
 
 import config

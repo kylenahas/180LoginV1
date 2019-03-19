@@ -26,8 +26,16 @@ def init():
     
 
 class LoginDatabase:
-    membersDB = TinyDB("members.json")
-    logDB = TinyDB("log.json")
+
+    def __init__(self, db_dir=None):
+
+        if db_dir:
+            append_dir = db_dir
+        else:
+            append_dir = ""
+
+        self.membersDB = TinyDB(append_dir + "members.json")
+        self.logDB = TinyDB(append_dir + "log.json")
 
     """ add_member: Adds a new member to the database. All parameters but link are required. 
                     Expiration date is automatically set using the member date and current time. Current time 
@@ -269,6 +277,9 @@ class LoginDatabase:
 
     def delete_member(self, member_id, hard_delete=False):
         member_query = Query()
+        if hard_delete:
+            raise RuntimeError("Not supported")
+
         if self.membersDB.contains(member_query.id == member_id):
             member_data = self.membersDB.get(member_query.id == member_id)
             member_data["deleted"] = True

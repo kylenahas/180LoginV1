@@ -2,8 +2,9 @@ import tkinter as tk
 from tkinter import *
 from tkinter import messagebox, simpledialog, filedialog, StringVar, ttk
 import os
-import sys
+import sys, platform
 import time
+import importlib
 from plotly.offline import plot
 
 import config
@@ -101,12 +102,15 @@ class Admin(tk.Frame):
             initialdir = "C:/"
         else:
             initialdir = "/"
-        logfile = filedialog.askopenfilename(initialdir=initialdir, title="Select file",
+        logfile = filedialog.askopenfilename(title="Select file",
                                               filetypes=(("json files", "*.json"), ("all files", "*.*")))
-        print(logfile)
-        ch = chartsHelper()
-        ch.calculate_attendence()
-        plot(ch.create_attendence_chart())
+        if logfile:
+            print(logfile)
+            ch = chartsHelper(logfile)
+            ch.calculate_attendence()
+            plot(ch.create_attendence_chart())
+        else:
+            print("Log aborted")
 
 
 

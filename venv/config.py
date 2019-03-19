@@ -1,6 +1,10 @@
 from dbManage import LoginDatabase
 
-appDB = LoginDatabase()
+# Should end with / or be None for current directory
+# db_dir = "./"
+db_dir = None
+
+appDB = LoginDatabase(db_dir=db_dir)
 
 member_types = { "punchcard": "Punchcard",
                  "monthly": "Monthly",
@@ -21,8 +25,10 @@ sign_off_list = {"woodshop": "Woodshop",
 
 sign_offs_enabled = True
 member_link_enabled = True
-allow_multiple_scans_a_day = False
+allow_multiple_scans_a_day = True
 
 
 zebra_printer_name = "Zebra_Technologies_ZTC_ZD410-203dpi_ZPL"
 zebra_print_enabled = True
+
+log_errors_to_file = True

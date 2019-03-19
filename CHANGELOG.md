@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 
+## [0.9.4] - 2019-3-18
+### Added
+- venv is now fully contained in project to attempt to make setup on new computers easier
+- Zebra library now internal to project to fix dependency problem on Windows
+- Log to text file option
+- Optionally specify location of log and member databases
+### Changed
+- New pandas testing in chartsHelper
+- Fixed bug where an invalid DOB could cause a member to be un-editable
+
 ## [0.9.3] - 2019-3-1
 ### Added
 - AdminApp, a sandbox to do one off functions that don't belong in the main UI
