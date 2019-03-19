@@ -57,27 +57,30 @@ class chartsHelper:
         print(self.logDB.all())
         
     def calculate_attendence(self, start_date=None, period=None):
-        zeros = numpy.zeros((7,), dtype=int)
-        self.attendance = {}
-        # self.attendance = {k:numpy.zeros((7,), dtype=int) for k in config.member_types.keys()}  # https://stackoverflow.com/a/483833
-        for member_type_k in config.member_types.keys():
-            # print(member_type_k)
-            self.attendance.update({member_type_k: zeros})
-        # self.attendence = {  "punchcard": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "monthly": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "annual": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "student": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "student_annual": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "volunteer": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "trial": [0, 0, 0, 0, 0, 0, 0, 0],
-        #                 "organization": [0, 0, 0, 0, 0, 0, 0, 0] }
+        # zeros = numpy.zeros((7,), dtype=int)
+        # self.attendance = {}
+        # # self.attendance = {k:numpy.zeros((7,), dtype=int) for k in config.member_types.keys()}  # https://stackoverflow.com/a/483833
+        # for member_type_k in config.member_types.keys():
+        #     # print(member_type_k)
+        #     self.attendance.update({member_type_k: zeros})
+        self.attendance = {  "punchcard": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "monthly": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "annual": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "student": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "student_annual": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "volunteer": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "trial": [0, 0, 0, 0, 0, 0, 0, 0],
+                        "organization": [0, 0, 0, 0, 0, 0, 0, 0] }
         for entry in self.logDB:
-            print(entry)
+            # print(entry)
             dt = datetime.strptime(entry['log_time'], '%Y-%m-%d %H:%M:%S.%f')
             wd = dt.weekday()
-            member_type_str = entry.get('member_type_str', "punchcard")
-            print(member_type_str)
-            self.attendance.get(member_type_str)[wd] += 1
+            member_type_str = "punchcard"
+            try:
+                member_type_str = entry['member_type_str']
+            except:
+                pass
+            self.attendance[member_type_str][wd] += 1
         return self.attendance
     def create_attendence_chart(self):
         trace0 = go.Bar(

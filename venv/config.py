@@ -25,7 +25,7 @@ sign_off_list = {"woodshop": "Woodshop",
 
 sign_offs_enabled = True
 member_link_enabled = True
-allow_multiple_scans_a_day = True
+allow_multiple_scans_a_day = False
 
 
 zebra_printer_name = "Zebra_Technologies_ZTC_ZD410-203dpi_ZPL"
