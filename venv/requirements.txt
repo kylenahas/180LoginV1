@@ -18,5 +18,5 @@ simple-zpl2==0.2.2
 six==1.12.0
 tinydb==3.12.2
 traitlets==4.3.2
-urllib3==1.24.1
+urllib3==1.24.2
 zebra==0.0.5
